@@ -4,43 +4,18 @@ import { colors, CLEAR, ENTER, colorsToEmoji } from '../../constants'
 import Keyboard from '../Keyboard'
 import { borderColor } from 'react-native/Libraries/Components/View/ReactNativeStyleAttributes';
 import { getCurrentTimestamp } from 'react-native/Libraries/Utilities/createPerformanceLogger';
-import * as Clipboard  from 'expo-clipboard'
 import words from '../../words';
-import { copyArray, getDayOfTheYear } from '../../utils'
+import { copyArray, getDayOfTheYear, getDayKey } from '../../utils'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import EndScreen from '../EndScreen';
 
 const NUMBER_OF_TRIES = 6;
 const dayOfTheYear = getDayOfTheYear();
-const dayKey = `day-${dayOfTheYear}`;
-//  const game = {
-//     day_15: {
-//         rows: [[], []],
-//         curRow: 4,
-//         curCol: 2,
-//         gameState: 'won'
-//     },
-//     day_16: {
-//         rows: [[], []],
-//         curRow: 4,
-//         curCol: 2,
-//         gameState: 'lost'
-//     },
-//     day_16: {
-//         rows: [[], []],
-//         curRow: 4,
-//         curCol: 2,
-//         gameState: 'won'
-//     },
-//     day_17: {
-//         rows: [[], []],
-//         curRow: 4,
-//         curCol: 2,
-//         gameState: 'won'
-//     },
-// }
+const dayKey = getDayKey();
+
 
 const Game = () => {
-
+ // AsyncStorage.removeItem('@game')
   const word = words[dayOfTheYear];
   const letters = word.split(''); // returner array av characters
 
@@ -82,7 +57,6 @@ const Game = () => {
 
         const existingStateString = await AsyncStorage.getItem('@game');
         const existingState = existingStateString ? JSON.parse(existingStateString) : {};
-        
         existingState[dayKey] = dataForToday;
 
         const dataString = JSON.stringify(existingState);
@@ -110,21 +84,10 @@ const Game = () => {
 
   const checkGameState = () => {
     if (checkIfWon() && gameState !== 'won' ) {
-      Alert.alert('Congratz', 'You won!', [{ text: 'Share', onPress: shareScore }])
       setGameState('won')
     } else if (checkIfLost() && gameState !== 'lost') {
-      Alert.alert('Wrong', 'You lose!')
-      setGameState('lost')
+       setGameState('lost')
     }
-  }
-
-  const shareScore = () => {
-    const textMap = rows.map((row, i) => row.map((cell, j) => colorsToEmoji[getCellBGColor(i, j)]).join("")
-    ).filter((row) => row).join('\n');
-    const textToShare = `Wordle \n${textMap}`
-    Clipboard.setString(textToShare);
-    Alert.alert('Copied Succesfully', 'Share Your score');
-    
   }
 
   const checkIfWon = () => {
@@ -199,6 +162,10 @@ const Game = () => {
 
   if(!loaded) {
       return (<ActivityIndicator />)
+  }
+
+  if(gameState !== 'playing') {
+      return (<EndScreen won={gameState === 'won'} rows={rows} getCellBGColor={getCellBGColor} />)
   }
 
   return (
